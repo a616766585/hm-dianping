@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql
+    container_name: hmdp-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: hmdp
+    ports:
+      - "13308:3306"
+      - "13309:33060"
+    volumes:
+      - ./mysql:/docker-entrypoint-initdb.d
+    command:
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_general_ci
+  redis:
+    image: redis
+    container_name: hmdp-redis
+    ports:
+      - "13310:6379"
+  nginx:
+    image: nginx
+    container_name: hmdp-nginx
+    ports:
+      - "13311:80"
+      - "13312:8080"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/html:/usr/share/nginx/html

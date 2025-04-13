@@ -9,6 +9,8 @@ import com.hmdp.mapper.ShopMapper;
 import com.hmdp.service.IShopService;
 import com.hmdp.utils.CacheClient;
 import com.hmdp.utils.SystemConstants;
+import org.redisson.api.RedissonClient;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.GeoResult;
 import org.springframework.data.geo.GeoResults;
@@ -41,6 +43,8 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
 
     @Resource
     private CacheClient cacheClient;
+    @Autowired
+    private RedissonClient redissonClient;
 
     @Override
     public Result queryById(Long id) {
@@ -79,6 +83,8 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
 
     @Override
     public Result queryShopByType(Integer typeId, Integer current, Double x, Double y) {
+        redissonClient.getLock("").tryLock();
+
         // 1.判断是否需要根据坐标查询
         if (x == null || y == null) {
             // 不需要坐标查询，按数据库查询
