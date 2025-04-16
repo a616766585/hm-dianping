@@ -21,10 +21,8 @@ import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.hmdp.utils.RedisConstants.BLOG_LIKED_KEY;
@@ -134,12 +132,20 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         String idStr = StrUtil.join(",", ids);
         // 3.根据用户id查询用户 WHERE id IN ( 5 , 1 ) ORDER BY FIELD(id, 5, 1)
         List<UserDTO> userDTOS = userService.query()
-                .in("id", ids).last("ORDER BY FIELD(id," + idStr + ")").list()
+                .in("id", ids)
+                .list()
                 .stream()
                 .map(user -> BeanUtil.copyProperties(user, UserDTO.class))
                 .collect(Collectors.toList());
-        // 4.返回
-        return Result.ok(userDTOS);
+        // 4.排序
+        Map<Long, UserDTO> userMap = userDTOS.stream()
+                .collect(Collectors.toMap(UserDTO::getId, Function.identity()));
+        // 5. 根据原始 ID 顺序返回
+        List<UserDTO> sortedList = ids.stream()
+                .map(userMap::get)
+                .filter(Objects::nonNull) // 防止 Redis 中有 ID 但 DB 没数据
+                .collect(Collectors.toList());
+        return Result.ok(sortedList);
     }
 
     @Override
